@@ -23,19 +23,32 @@
   .stats { font-size: 12px; color: #666; white-space: nowrap; }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 10px; padding: 16px;
-  }
   .card {
-    background: #1a1a2e; border-radius: 10px; overflow: hidden;
-    border: 1px solid #2a2a4a; transition: transform .15s, border-color .15s;
+    background: #1a1a2e;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #2a2a4a;
+    transition: transform .15s, border-color .15s;
+
+    display: flex;
+    flex-direction: column;
   }
   .card:hover { transform: translateY(-3px); border-color: #7289da; }
   .card-img { width: 100%; aspect-ratio: 2/1; object-fit: cover; display: block; background: #2a2a3e; }
-  .card-body { padding: 7px 9px 4px; }
+  .card-body {
+    padding: 7px 9px 4px;
+    flex-grow: 1;
+  }
   .card-name { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.4; }
   .card-id { font-size: 10px; color: #5a6fd4; font-family: monospace; margin-top: 3px; }
-  .card-footer { display: flex; gap: 5px; padding: 5px 9px 9px; }
+  .card-footer {
+    display: flex;
+    gap: 5px;
+    padding: 5px 9px 9px;
+    margin-top: auto;
+  }
   .btn-copy {
     flex: 1; background: #7289da; color: #fff; border: none;
     border-radius: 6px; padding: 5px; font-size: 11px; cursor: pointer; transition: background .15s;
