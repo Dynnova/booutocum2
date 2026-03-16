@@ -22,19 +22,22 @@
   .search-bar input:focus { border-color: #7289da; }
   .stats { font-size: 12px; color: #666; white-space: nowrap; }
   .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px; padding: 16px;
-  .card {
-    background: #1a1a2e;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #2a2a4a;
-    transition: transform .15s, border-color .15s;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  padding: 16px;
+}
 
-    display: flex;
-    flex-direction: column;
-  }
+.card {
+  background: #1a1a2e;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #2a2a4a;
+  transition: transform .15s, border-color .15s;
+
+  display: flex;
+  flex-direction: column;
+}
   .card:hover { transform: translateY(-3px); border-color: #7289da; }
   .card-img { width: 100%; aspect-ratio: 2/1; object-fit: cover; display: block; background: #2a2a3e; }
   .card-body {
