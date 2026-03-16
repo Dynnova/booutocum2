@@ -23,7 +23,7 @@
   .stats { font-size: 12px; color: #666; white-space: nowrap; }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 10px; padding: 16px;
   }
   .card {
@@ -111,9 +111,17 @@ function render(page) {
     return;
   }
 
-  grid.innerHTML = items.map(item => {
+  grid.innerHTML = '';
+
+  const frag = document.createDocumentFragment();
+
+  items.forEach(item => {
     const title = esc(item.title || 'Unknown');
-    return `<div class="card">
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    card.innerHTML = `
       <img class="card-img" src="${esc(item.cover_url)}" alt="${title}" loading="lazy"
         onerror="this.style.background='#2a2a3e';this.removeAttribute('src')">
       <div class="card-body">
@@ -122,13 +130,15 @@ function render(page) {
       </div>
       <div class="card-footer">
         <button class="btn-copy" onclick="copyId(this, ${item.id}, '${title.replace(/'/g,"\\'")}')">📋 Copy ID</button>
-        <a class="btn-link" href="${esc(item.page_url)}" target="_blank">🔗</a>
       </div>
-    </div>`;
-  }).join('');
+    `;
+
+    frag.appendChild(card);
+  });
+
+  grid.appendChild(frag);
 
   renderPagination(page, totalPages);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderPagination(page, totalPages) {
@@ -148,7 +158,16 @@ function renderPagination(page, totalPages) {
     ).join('')}
     <button class="page-btn" onclick="render(${page+1})" ${page>=totalPages?'disabled':''}>▶</button>
     <span class="page-info">${page}/${totalPages}</span>
+    <input type="number" id="pageInput" min="1" max="${totalPages}" placeholder="page" style="width:60px;padding:4px;border-radius:4px;border:1px solid #3a3a5a;background:#2a2a4a;color:#fff">
+    <button class="page-btn" onclick="goToPage(${totalPages})">Go</button>
   `;
+}
+
+function goToPage(totalPages){
+  const val = parseInt(document.getElementById('pageInput').value);
+  if(!val) return;
+  const page = Math.max(1, Math.min(totalPages, val));
+  render(page);
 }
 
 function copyId(btn, id, name) {
