@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎭 Cosplay List</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0f0f14; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+  header {
+    background: #1a1a2e; border-bottom: 1px solid #2a2a4a;
+    padding: 14px 20px; position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  header h1 { font-size: 18px; color: #7289da; white-space: nowrap; }
+  .search-bar { flex: 1; min-width: 180px; }
+  .search-bar input {
+    width: 100%; background: #2a2a3e; border: 1px solid #3a3a5a;
+    border-radius: 8px; padding: 7px 14px; color: #e0e0e0;
+    font-size: 14px; outline: none; transition: border-color .2s;
+  }
+  .search-bar input:focus { border-color: #7289da; }
+  .stats { font-size: 12px; color: #666; white-space: nowrap; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px; padding: 16px;
+  }
+  .card {
+    background: #1a1a2e; border-radius: 10px; overflow: hidden;
+    border: 1px solid #2a2a4a; transition: transform .15s, border-color .15s;
+  }
+  .card:hover { transform: translateY(-3px); border-color: #7289da; }
+  .card-img { width: 100%; aspect-ratio: 2/1; object-fit: cover; display: block; background: #2a2a3e; }
+  .card-body { padding: 7px 9px 4px; }
+  .card-name { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.4; }
+  .card-id { font-size: 10px; color: #5a6fd4; font-family: monospace; margin-top: 3px; }
+  .card-footer { display: flex; gap: 5px; padding: 5px 9px 9px; }
+  .btn-copy {
+    flex: 1; background: #7289da; color: #fff; border: none;
+    border-radius: 6px; padding: 5px; font-size: 11px; cursor: pointer; transition: background .15s;
+  }
+  .btn-copy:hover { background: #5a6fd4; }
+  .btn-copy.copied { background: #43b581; }
+  .btn-link {
+    background: #2a2a4a; color: #aaa; border: none; border-radius: 6px;
+    padding: 5px 8px; font-size: 11px; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; transition: background .15s;
+  }
+  .btn-link:hover { background: #3a3a5a; color: #e0e0e0; }
+  .pagination { display: flex; justify-content: center; align-items: center; gap: 6px; padding: 16px; flex-wrap: wrap; }
+  .page-btn {
+    background: #2a2a4a; color: #e0e0e0; border: 1px solid #3a3a5a;
+    border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 13px; transition: background .15s;
+  }
+  .page-btn:hover:not(:disabled) { background: #7289da; border-color: #7289da; }
+  .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .page-btn.active { background: #7289da; border-color: #7289da; }
+  .page-info { color: #666; font-size: 12px; }
+  .loader, .empty { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #555; font-size: 15px; }
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; background: #43b581; color: #fff;
+    padding: 9px 16px; border-radius: 8px; font-size: 13px; opacity: 0;
+    transform: translateY(8px); transition: all .2s; pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎭 Cosplay List</h1>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Cari judul, nama, karakter..." autocomplete="off">
+  </div>
+  <span class="stats" id="stats"></span>
+</header>
+
+<div class="grid" id="grid">
+  <div class="loader">⏳ Memuat data...</div>
+</div>
+<div class="pagination" id="pagination"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const LIMIT = 48;
+let allData = [], filtered = [], currentPage = 1, searchTimeout;
+
+async function init() {
+  try {
+    const res = await fetch('./cosplay.json');
+    allData = await res.json();
+    filtered = allData;
+    document.getElementById('stats').textContent = `${allData.length.toLocaleString()} cosplay`;
+    render(1);
+  } catch (err) {
+    document.getElementById('grid').innerHTML = `<div class="empty">❌ Gagal load data</div>`;
+  }
+}
+
+function render(page) {
+  currentPage = page;
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / LIMIT);
+  const start = (page - 1) * LIMIT;
+  const items = filtered.slice(start, start + LIMIT);
+  const grid = document.getElementById('grid');
+
+  if (!items.length) {
+    grid.innerHTML = '<div class="empty">😢 Tidak ada hasil</div>';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  grid.innerHTML = items.map(item => {
+    const title = esc(item.title || 'Unknown');
+    return `<div class="card">
+      <img class="card-img" src="${esc(item.cover_url)}" alt="${title}" loading="lazy"
+        onerror="this.style.background='#2a2a3e';this.removeAttribute('src')">
+      <div class="card-body">
+        <div class="card-name">${title}</div>
+        <div class="card-id">#${item.id}</div>
+      </div>
+      <div class="card-footer">
+        <button class="btn-copy" onclick="copyId(this, ${item.id}, '${title.replace(/'/g,"\\'")}')">📋 Copy ID</button>
+        <a class="btn-link" href="${esc(item.page_url)}" target="_blank">🔗</a>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderPagination(page, totalPages);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderPagination(page, totalPages) {
+  const el = document.getElementById('pagination');
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+  const pages = [];
+  pages.push(1);
+  if (page - 2 > 2) pages.push('…');
+  for (let i = Math.max(2, page - 2); i <= Math.min(totalPages - 1, page + 2); i++) pages.push(i);
+  if (page + 2 < totalPages - 1) pages.push('…');
+  if (totalPages > 1) pages.push(totalPages);
+  el.innerHTML = `
+    <button class="page-btn" onclick="render(${page-1})" ${page<=1?'disabled':''}>◀</button>
+    ${pages.map(p => p === '…'
+      ? `<span class="page-info">…</span>`
+      : `<button class="page-btn ${p===page?'active':''}" onclick="render(${p})">${p}</button>`
+    ).join('')}
+    <button class="page-btn" onclick="render(${page+1})" ${page>=totalPages?'disabled':''}>▶</button>
+    <span class="page-info">${page}/${totalPages}</span>
+  `;
+}
+
+function copyId(btn, id, name) {
+  navigator.clipboard.writeText(String(id)).then(() => {
+    btn.textContent = '✅ Copied!';
+    btn.classList.add('copied');
+    showToast(`ID ${id} · ${name}`);
+    setTimeout(() => { btn.textContent = '📋 Copy ID'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = `✅ ${msg}`;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    const q = e.target.value.trim().toLowerCase();
+    filtered = q
+      ? allData.filter(i =>
+          (i.title||'').toLowerCase().includes(q) ||
+          String(i.id).includes(q)
+        )
+      : allData;
+    document.getElementById('stats').textContent =
+      q ? `${filtered.length} dari ${allData.length.toLocaleString()} cosplay` : `${allData.length.toLocaleString()} cosplay`;
+    render(1);
+  }, 300);
+});
+
+init();
+</script>
+</body>
+</html>
